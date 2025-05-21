@@ -8,6 +8,22 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/"
 
+CPUs_available() {
+    local cpu_load=$( top -b -n2 | grep "Cpu(s)" | awk '{print $2+$4}' | tail -n1 )
+    local cpu_num_all=$( getconf _NPROCESSORS_ONLN )
+    # estimate used cores
+    local used=$( printf "%.0f" "$(echo "$cpu_load/100*$cpu_num_all" | bc -l)" )
+    echo $(( cpu_num_all - used ))
+}
+
+setITKthreads () {
+			OMP_NUM_THREADS=$1
+			ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$1  										# multi-threading ( 4 ANTs)
+			export OMP_NUM_THREADS
+			export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS
+			
+			}
+
 
 ### === Load parameters from config.json ===
 t1w=$(jq -r .t1 config.json)
@@ -113,6 +129,8 @@ case $settings in
     exit 1
     ;;
 esac
+
+setITKthreads $( CPUs_available )
 
 f=${anat}
 m=${t1w}
