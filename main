@@ -130,7 +130,10 @@ case $settings in
     ;;
 esac
 
-setITKthreads $( CPUs_available )
+nthreads=$( CPUs_available )
+setITKthreads ${nthreads}
+
+echo "number of threads set: "${nthreads}
 
 f=${anat}
 m=${t1w}
