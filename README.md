@@ -49,7 +49,7 @@ The pipeline is configurable through a `config.json` file and is compatible with
 3. Run the app:
    ```bash
    bl app run --id <app_id> --project <project_id> \
-     --input moving_t1:<moving_t1_id> \
+     --input t1:<moving_t1_id> \
      --input fixed_t1:<fixed_t1_id>
    ```
 
