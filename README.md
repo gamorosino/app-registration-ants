@@ -13,7 +13,7 @@ An automated and reproducible pipeline to perform image registration between two
 
 ## Description
 
-This workflow registers a moving T1-weighted (T1w) image to a fixed T1w reference image using ANTs' registration framework. The pipeline performs translation, rigid, affine, and optionally nonlinear (SyN) registration steps. Outputs include the transformation matrices, warp fields, and the registered T1w image.
+This workflow registers a moving 3D MRI image to a fixed reference image using ANTs' registration framework. The pipeline performs translation, rigid, affine, and optionally nonlinear (SyN) registration steps. Outputs include the transformation matrices, warp fields, and the registered T1w image.
 
 The pipeline is configurable through a `config.json` file and is compatible with containerized execution (e.g., Singularity), enhancing portability and reproducibility across computing environments.
 
@@ -70,7 +70,7 @@ Replace dataset and project IDs as appropriate.
 2. Prepare a `config.json` file:
    ```json
    {
-       "moving_t1": "sub-01_acq-01_T1w.nii.gz",
+       "t1": "sub-01_acq-01_T1w.nii.gz",
        "fixed_t1": "sub-01_acq-02_T1w.nii.gz",
        "transformation": "nonlinear",
        "settings": "1"
@@ -88,7 +88,7 @@ Replace dataset and project IDs as appropriate.
 
 - `ANTs_outputs/` — Registration outputs from ANTs (affine, warp, inverse warp)
 - `transformations/` — Exported transformation matrices and warp fields
-- `transformed/` — Final registered T1w image
+- `transformed/` — Final registered image
 
 ---
 
