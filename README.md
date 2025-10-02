@@ -70,7 +70,7 @@ Replace dataset and project IDs as appropriate.
 2. Prepare a `config.json` file:
    ```json
    {
-       "t1": "sub-01_acq-01_T1w.nii.gz",
+       "moving_t1": "sub-01_acq-01_T1w.nii.gz",
        "fixed_t1": "sub-01_acq-02_T1w.nii.gz",
        "transformation": "nonlinear",
        "settings": "1"
