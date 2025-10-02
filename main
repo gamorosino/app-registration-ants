@@ -27,11 +27,38 @@ setITKthreads () {
 
 ### === Load parameters from config.json ===
 t1w=$(jq -r .t1 config.json)
+t2w=$(jq -r .t2 config.json)
 transf_type=$(jq -r .transformation config.json)
 settings=$(jq -r .settings config.json)
 
+# === Assign first available input ===
+if [ -n "$t1w" ] && [ "$t1w" != "null" ]; then
+    input=$t1w
+elif [ -n "$t2w" ] && [ "$t2w" != "null" ]; then
+    input=$t2w
+elif [ -n "$fa" ] && [ "$fa" != "null" ]; then
+    input=$fa
+else
+    echo "Error: No valid input found in config.json" >&2
+    exit 1
+fi
+
 # Optional anatomical fields
-anat=$(jq -r .t1_fixed config.json)
+t1w_fixed=$(jq -r .t1_fixed config.json)
+t2w_fixed=$(jq -r .t2_fixed config.json)
+
+# === Assign first available anatomical reference ===
+if [ -n "$t1w_fixed" ] && [ "$t1w_fixed" != "null" ]; then
+    anat=$t1w_fixed
+elif [ -n "$t2w_fixed" ] && [ "$t2w_fixed" != "null" ]; then
+    anat=$t2w_fixed
+elif [ -n "$fa_fixed" ] && [ "$fa_fixed" != "null" ]; then
+    anat=$fa_fixed
+else
+    echo "Error: No valid anatomical reference found in config.json" >&2
+    exit 1
+fi
+
 
 ### === Set ANTs registration parameters ===
 
@@ -136,7 +163,7 @@ setITKthreads ${nthreads}
 echo "number of threads set: "${nthreads}
 
 f=${anat}
-m=${t1w}
+m=${input}
 stage0="-m mattes[  $f, $m , 1 , 32, regular, $percentage ] -t translation[ 0.1 ] -c [$its,$thresold,20] -u 1 -s $shrink_lin -f $shrink0 -l 1"
 stage1="-m mattes[  $f, $m , 1 , 32, regular, $percentage ] -t rigid[ 0.1 ]       -c [$its,$thresold,20] -u 1 -s $shrink_lin -f $shrink_lin -l 1"
 stage2="-m mattes[  $f, $m , 1 , 32, regular, $percentage ] -t affine[ 0.1 ]      -c [$its,$thresold,20] -u 1 -s $shrink_lin -f $shrink_lin -l 1"
@@ -153,7 +180,7 @@ mkdir -p ${ANTs_outputs}
 
 ### === Perform ANTs registration ===
 echo "Running ANTs registration..."
-filenamem=$(basename "${t1w}")
+filenamem=$(basename "${m}")
 name_noext="${filenamem%.nii.gz}"     # remove .nii.gz if present
 name_noext="${name_noext%.nii}"      # remove .nii if present
 ANTsprefix=${ANTs_outputs}/${name_noext}_${diffeopost}
@@ -162,7 +189,7 @@ ANTsinv=${ANTsprefix}"inv.nii.gz"
 
 echo "    antsRegistration \
     -d 3 \
-    -r [${anat},${t1w},1] \
+    -r [${f},${m},1] \
     $stage0\
     $stage1\
     $stage2\
@@ -210,6 +237,6 @@ fi
  
 outputdir=${SCRIPT_DIR}'/transformed'
 mkdir -p ${outputdir}
-t1w_output=${outputdir}'/'$( basename ${t1w} )
-cp ${t1w_warped} ${t1w_output}
+img_output=${outputdir}'/'$( basename ${input} )
+cp ${anat_warped} ${img_output}
 singularity exec -e docker://brainlife/ants:2.2.0-1bc ConvertTransformFile 3 $AffineMat  ${transformations}'/affine.txt'
