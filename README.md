@@ -1,6 +1,6 @@
-# T1w-to-T1w Registration
+# 3D MRI Registration
 
-An automated and reproducible pipeline to perform image registration between two T1-weighted anatomical MRI scans using ANTs. This tool ensures high-precision alignment through a multi-stage transformation process suitable for intra-subject longitudinal studies or inter-subject normalization workflows.
+An automated and reproducible pipeline to perform image registration between two 3D MRI scans using ANTs. This tool ensures high-precision alignment through a multi-stage transformation process suitable for intra-subject longitudinal studies or inter-subject normalization workflows.
 
 ---
 
