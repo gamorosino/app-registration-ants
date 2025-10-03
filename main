@@ -33,11 +33,11 @@ settings=$(jq -r .settings config.json)
 
 # === Assign first available input ===
 if [ -n "$t1w" ] && [ "$t1w" != "null" ]; then
-    input=$t1w
+    input_moving=$t1w
 elif [ -n "$t2w" ] && [ "$t2w" != "null" ]; then
-    input=$t2w
+    input_moving=$t2w
 elif [ -n "$fa" ] && [ "$fa" != "null" ]; then
-    input=$fa
+    input_moving=$fa
 else
     echo "Error: No valid input found in config.json" >&2
     exit 1
@@ -49,11 +49,11 @@ t2w_fixed=$(jq -r .t2_fixed config.json)
 
 # === Assign first available anatomical reference ===
 if [ -n "$t1w_fixed" ] && [ "$t1w_fixed" != "null" ]; then
-    anat=$t1w_fixed
+    input_fixed=$t1w_fixed
 elif [ -n "$t2w_fixed" ] && [ "$t2w_fixed" != "null" ]; then
-    anat=$t2w_fixed
+    input_fixed=$t2w_fixed
 elif [ -n "$fa_fixed" ] && [ "$fa_fixed" != "null" ]; then
-    anat=$fa_fixed
+    input_fixed=$fa_fixed
 else
     echo "Error: No valid anatomical reference found in config.json" >&2
     exit 1
@@ -162,8 +162,8 @@ setITKthreads ${nthreads}
 
 echo "number of threads set: "${nthreads}
 
-f=${anat}
-m=${input}
+f=${input_fixed}
+m=${input_moving}
 stage0="-m mattes[  $f, $m , 1 , 32, regular, $percentage ] -t translation[ 0.1 ] -c [$its,$thresold,20] -u 1 -s $shrink_lin -f $shrink0 -l 1"
 stage1="-m mattes[  $f, $m , 1 , 32, regular, $percentage ] -t rigid[ 0.1 ]       -c [$its,$thresold,20] -u 1 -s $shrink_lin -f $shrink_lin -l 1"
 stage2="-m mattes[  $f, $m , 1 , 32, regular, $percentage ] -t affine[ 0.1 ]      -c [$its,$thresold,20] -u 1 -s $shrink_lin -f $shrink_lin -l 1"
@@ -201,7 +201,7 @@ echo "    antsRegistration \
 singularity exec -e docker://brainlife/ants:2.2.0-1bc \
     antsRegistration \
     -d 3 \
-    -r [${anat},${t1w},1] \
+    -r [${f},${m},1] \
     $stage0\
     $stage1\
     $stage2\
@@ -214,15 +214,15 @@ singularity exec -e docker://brainlife/ants:2.2.0-1bc \
   WarpField=${ANTsprefix}"1Warp.nii.gz"
   InverseWarpField=${ANTsprefix}"1InverseWarp.nii.gz"
   AffineMat=${ANTsprefix}"0GenericAffine.mat"
-  t1w_warped=${ANTsprefix}"warped.nii.gz"
+  input_warped=${ANTsprefix}"warped.nii.gz"
   [ ${nonlin} -eq 1 ]  && { warp_cmd="-t  ${WarpField}"; }
   singularity exec -e docker://brainlife/ants:2.2.0-1bc \
     antsApplyTransforms -d 3 \
-                        -i ${t1w} \
-                        -r ${anat} \
+                        -i ${m} \
+                        -r ${f} \
                         ${warp_cmd} \
                         -t  ${AffineMat} \
-			-o ${t1w_warped}
+			                  -o ${input_warped}
 
 ### === format output in brainlife datatype style ===
                 
@@ -237,6 +237,6 @@ fi
  
 outputdir=${SCRIPT_DIR}'/transformed'
 mkdir -p ${outputdir}
-img_output=${outputdir}'/'$( basename ${input} )
+img_output=${outputdir}'/'$( basename ${input_moving} )
 cp ${anat_warped} ${img_output}
 singularity exec -e docker://brainlife/ants:2.2.0-1bc ConvertTransformFile 3 $AffineMat  ${transformations}'/affine.txt'
