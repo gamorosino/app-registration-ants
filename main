@@ -28,6 +28,7 @@ setITKthreads () {
 ### === Load parameters from config.json ===
 t1w=$(jq -r .t1 config.json)
 t2w=$(jq -r .t2 config.json)
+fa=$(jq -r .fa config.json)
 transf_type=$(jq -r .transformation config.json)
 settings=$(jq -r .settings config.json)
 
@@ -46,6 +47,7 @@ fi
 # Optional anatomical fields
 t1w_fixed=$(jq -r .t1_fixed config.json)
 t2w_fixed=$(jq -r .t2_fixed config.json)
+fa_fixed=$(jq -r .fa_fixed config.json)
 
 # === Assign first available anatomical reference ===
 if [ -n "$t1w_fixed" ] && [ "$t1w_fixed" != "null" ]; then
