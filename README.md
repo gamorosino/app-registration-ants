@@ -1,106 +1,103 @@
-# 3D MRI Registration
+<h1 align="center">T2w-to-T1w Registration</h1>
 
-An automated and reproducible pipeline to perform image registration between two 3D MRI scans using ANTs. This tool ensures high-precision alignment through a multi-stage transformation process suitable for intra-subject longitudinal studies or inter-subject normalization workflows.
+<p align="center">
+  Registers a T2-weighted image to a T1-weighted reference with ANTs using translation, rigid, affine and optional SyN stages, outputting the transforms and the registered T2w.
+</p>
 
----
+<p align="center">
+  <a href="https://github.com/brainlife/abcd-spec"><img src="https://img.shields.io/badge/ABCD_Spec-v1.1-green.svg" alt="ABCD Spec v1.1"></a>
+  <a href="https://doi.org/10.25663/brainlife.app.877"><img src="https://img.shields.io/badge/Brainlife-brainlife.app.877-blue.svg" alt="Run on brainlife.io"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-see_LICENSE-lightgrey.svg" alt="License"></a>
+</p>
 
-## Author
+## At a glance
 
-**Gabriele Amorosino**  
-(email: [gabriele.amorosino@utexas.edu](mailto:gabriele.amorosino@utexas.edu))
+<!-- brainlife-app:begin (generated from the App manifest; edit the manifest, not this block) -->
 
----
+> **Registers a T2-weighted image to a T1-weighted reference with ANTs using translation, rigid, affine and optional SyN stages, outputting the transforms and the registered T2w.**
 
-## Description
+Runs antsRegistration from the moving image to the fixed image up to the selected transformation stage, with the pyramid depth set by settings, and applies the result to the moving image. Use it to bring a subject's T2w into its T1w space (or for inter-subject normalisation). The README describes the T1w-to-T1w variant of the same code.
 
-This workflow registers a moving 3D MRI image to a fixed reference image using ANTs' registration framework. The pipeline performs translation, rigid, affine, and optionally nonlinear (SyN) registration steps. Outputs include the transformation matrices, warp fields, and the registered T1w image.
+| | |
+|---|---|
+| **Inputs** | `neuro/anat/t2w` · `neuro/anat/t1w` |
+| **Outputs** | `neuro/transform/nifti` · `neuro/anat/t2w` |
+| **Container** | `brainlife/ants:2.2.0-1bc` |
+| **Resources** | 1 CPUs · 2 h walltime |
+| **Run it** | [doi.org/10.25663/brainlife.app.877](https://doi.org/10.25663/brainlife.app.877) |
 
-The pipeline is configurable through a `config.json` file and is compatible with containerized execution (e.g., Singularity), enhancing portability and reproducibility across computing environments.
+#### Inputs
 
----
+| Input | Datatype | Required | Description |
+|---|---|---|---|
+| `t2_moving` | `neuro/anat/t2w` | yes | T2-weighted image to register (moving). |
+| `t1_fixed` | `neuro/anat/t1w` | yes | T1-weighted image used as the fixed reference. |
 
-## Requirements
+#### Outputs
 
-- [Singularity](https://sylabs.io/guides/latest/user-guide/)
+| Output | Datatype | Description |
+|---|---|---|
+| `transformations` | `neuro/transform/nifti` | ANTs affine matrix and warp fields from the T2w to the T1w space. |
+| `transformed` | `neuro/anat/t2w` | T2-weighted image resampled into the T1w reference space. |
 
----
+<details>
+<summary><b>Parameters</b> (2)</summary>
 
-## Usage
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `settings` | enum | `4` | The `settings` parameter controls the depth of the multiresolution (pyramidal) registration strategy used by ANTs. Higher settings correspond to more levels in the registration pyramid, starting from coarse alignment and progressively refining toward finer spatial correspondence. Options: `1`, `2`, `3`, `4`. |
+| `transformation` | enum | `nonlinear` | Highest registration stage to run: translation, rigid, affine or nonlinear (SyN); each stage includes the previous ones. Options: `translation`, `rigid`, `affine`, `nonlinear`. |
 
-### Running on Brainlife.io
+</details>
 
-#### Via Web UI
+<!-- brainlife-app:end -->
 
-1. Go to [Brainlife.io](https://brainlife.io) and search for the `app-registration-t1w2t1w` app.
-2. Click the **Execute** tab.
-3. Upload the following inputs:
-   - Moving T1w image (`.nii.gz`)
-   - Fixed T1w reference image (`.nii.gz`)
-   - (Optional) `config.json` file to specify registration parameters
-4. Submit the job to generate aligned T1w outputs and transformation metadata.
+## Running the App
 
-#### Via CLI
+### On brainlife.io
 
-1. Install the Brainlife CLI: https://brainlife.io/docs/cli/
-2. Log in:
-   ```bash
-   bl login
-   ```
-3. Run the app:
-   ```bash
-   bl app run --id <app_id> --project <project_id> \
-     --input t1:<moving_t1_id> \
-     --input fixed_t1:<fixed_t1_id>
-   ```
+Open the App at [doi.org/10.25663/brainlife.app.877](https://doi.org/10.25663/brainlife.app.877), choose `neuro/anat/t2w`, `neuro/anat/t1w` from your project, set the parameters and press **Execute**. The results are saved to your project as `neuro/transform/nifti`, `neuro/anat/t2w`.
 
-Replace dataset and project IDs as appropriate.
+### Locally
 
----
+You need [Singularity/Apptainer](https://apptainer.org/) (the App runs in `brainlife/ants:2.2.0-1bc`), [`jq`](https://jqlang.github.io/jq/).
 
-### Running Locally
+1. Clone this repository.
+2. Create `config.json` with the paths to your inputs and the parameters:
 
-#### Using a Configuration File
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/gamorosino/app-registration-t1w2t1w.git
-   cd app-registration-t1w2t1w/main
-   ```
-
-2. Prepare a `config.json` file:
    ```json
    {
-       "moving_t1": "sub-01_acq-01_T1w.nii.gz",
-       "fixed_t1": "sub-01_acq-02_T1w.nii.gz",
-       "transformation": "nonlinear",
-       "settings": "1"
+       "t2": "/path/to/t2_moving/t2",
+       "t1_fixed": "/path/to/t1_fixed/t1_fixed",
+       "settings": "4",
+       "transformation": "nonlinear"
    }
    ```
 
-3. Run the pipeline:
-   ```bash
-   bash ./main
-   ```
+3. Run `./main`.
 
----
+## Troubleshooting
 
-## Outputs
+- **Error: No valid input found in config.json**: Provide the moving image input.
 
-- `ANTs_outputs/` — Registration outputs from ANTs (affine, warp, inverse warp)
-- `transformations/` — Exported transformation matrices and warp fields
-- `transformed/` — Final registered image
+## Citing
 
----
+If you use this App, please cite it, the software it builds on and brainlife.io:
 
-## Citation
-
-If you use this repository, please cite the relevant tools and frameworks:
-
+- T2w-to-T1w Registration. brainlife.io App. [doi:10.25663/brainlife.app.877](https://doi.org/10.25663/brainlife.app.877)
 - Avants, B. B., Tustison, N. J., Song, G., Cook, P. A., Klein, A., & Gee, J. C. (2011). A reproducible evaluation of ANTs similarity metric performance in brain image registration. Neuroimage, 54(3), 2033-2044.
-- Hayashi, S., Caron, B. A., Heinsfeld, A. S., ... & Pestilli, F. (2024). brainlife. io: a decentralized and open-source cloud platform to support neuroscience research. Nature methods, 21(5), 809-813.
+- Hayashi, S., Caron, B. A., Heinsfeld, A. S., ... & Pestilli, F. (2024). brainlife. io: a decentralized and open-source cloud platform to support neuroscience research. Nature methods, 21(5), 809-813. ---
+- Avants et al. A reproducible evaluation of ANTs similarity metric performance in brain image registration. *NeuroImage* 54:2033-2044 (2011). [doi:10.1016/j.neuroimage.2010.09.025](https://doi.org/10.1016/j.neuroimage.2010.09.025)
+- Hayashi S, Caron BA, Heinsfeld AS, et al. brainlife.io: a decentralized and open-source cloud platform to support neuroscience research. *Nature Methods* 21:809–813 (2024). [doi:10.1038/s41592-024-02237-2](https://doi.org/10.1038/s41592-024-02237-2)
+- Avesani P, McPherson B, Hayashi S, et al. The open diffusion data derivatives, brain data upcycling via integrated publishing of derivatives and reproducible open cloud services. *Scientific Data* 6:69 (2019). [doi:10.1038/s41597-019-0073-y](https://doi.org/10.1038/s41597-019-0073-y)
+
+## Authors
+
+**Gabriele Amorosino**  
+(email:
 
 ---
 
 ## License
 
-This project is released under the [MIT License](LICENSE).
+See [LICENSE](LICENSE).
